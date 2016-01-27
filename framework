@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js" type="text/javascript"></script>
+		<script src="http://git.firecaster.com/Joel/KoalaJS/raw/master/koala.js"></script>
+		<title>Firecaster Template</title>
+	</head>
+	<body style="margin: 0;
+		padding: 0;">
+		<canvas width=800 height=800 id="gamescreen" style="display:block;margin:auto;"></canvas>
+		<div style="position:absolute;top:5px;left:5px;z-index:2;">
+			<a href="/"><img src="http://www.firecaster.com/firecasterdarksmall.png" /></a>
+		</div>
+		<script>
+			var k = makeKoalaJS();
+			var size = 800;
+			var mousex = 0;
+			var mousey = 0;
+			var bullet;
+			var myarray = [];
+			var rect;
+			var pressing = false;
+			var key = [];
+			var gamescreen = document.getElementById("gamescreen");
+			var ctx = gamescreen.getContext('2d');
+			var width = size;
+			var height = size;
+			var counter = 0;
+			var cooldown = 0;
+			var enemy;
+			enemy = {};
+			enemy.x = 50;
+			enemy.y = 0;
+			enemy.w = 20;
+			enemy.h = 20;
+			enemy.speed = 5;
+			var hit = false;
+			var enAlive = true;
+			var character;
+			character = {};
+			character.x = 400;
+			character.y = 700;
+			character.w = 20;
+			character.h = 20;
+			character.speed = 5;
+			var drawArray = [];
+			var enArray = [];
+			var enCounter = 0;
+			var flip = 0;
+			resize();
+			setInterval(draw,16);
+			//setInterval(drawchar,16);
+			$(window).resize(resize);
+			function resize(){
+				var wwidth = $(window).width();
+				var wheight = $(window).height();
+				if (wwidth < wheight)
+				{
+					$('#gamescreen').width(wwidth);
+					$('#gamescreen').height(wwidth);
+					$('#gamescreen').css("left",-wwidth/2 + "px");
+					$('#gamescreen').css("margin-top",wheight/2-wwidth/2 + "px");
+				}
+				else
+				{
+					$('#gamescreen').width(wheight);
+					$('#gamescreen').height(wheight);
+					$('#gamescreen').css("left",-wheight/2 + "px");
+					//$('#gamescreen').css("top",-wheight/2 + "px");
+					$('#gamescreen').css("margin-top",0 + "px");
+				
+				}
+				if ($('#gamescreen').width() > size)
+				{
+					$('#gamescreen').width(size);
+					$('#gamescreen').height(size);
+					$('#gamescreen').css("left",-size/2 + "px");
+					$('#gamescreen').css("margin-top",wheight/2-size/2 + "px");
+					
+				}
+			
+			}
+			function moveToPoint(obj,x,y,speed){
+				var diff1 = x-obj.x;
+				var diff2 = y-obj.y;
+				var sum = (diff1*diff1)+(diff2*diff2);
+				var distance = Math.sqrt(sum);
+				var tarX = (diff1/distance)*speed;
+				var tarY = (diff2/distance)*speed;
+				if (distance>0){
+					obj.x+= tarX;
+					obj.y+= tarY;
+				}
+			}
+			function drawchar(){
+				ctx.fillStyle = 'cyan';
+				ctx.fillRect(character.x,character.y,character.w,character.h);
+				moveChar();
+				fireBullet();
+				}
+			function fireBullet(){
+				cooldown-=1;
+				if (cooldown<=0){
+					if (key[32]){
+							bullet = {};
+							bullet.x = character.x;
+							bullet.y = character.y; 
+							bullet.speed = 10;
+							myarray[counter] = bullet;
+							counter++;
+							cooldown = 30;
+					
+					}
+				}
+					for (var i = 0; i < myarray.length; i++) { 
+							ctx.fillStyle = 'black';
+							ctx.fillRect(myarray[i].x,myarray[i].y,5,5);
+							moveToPoint(myarray[i], myarray[i].x, myarray[i].y-1, myarray[i].speed);
+							checkHit(myarray[i], enemy);
+							checkHit(enemy, myarray[i]);
+					}
+			}
+			function drawEnemy(){
+				if (enAlive) {
+					moveEn();
+				}
+			}
+			function moveEn(){
+				if (!hit) {
+					ctx.fillStyle = 'gray';
+					ctx.fillRect(enemy.x, enemy.y, 20, 20);
+					if (enemy.x == 800) {
+						flip=1;
+					}
+					if (enemy.x == 0) {
+						flip=0;
+					}
+					if (flip==1) {
+						enemy.x-=5;
+					}
+					if (flip==0){
+						enemy.x+=5;
+					}
+				}
+			}
+			function moveChar(){
+				if(key[87] || key[38]){
+					character.y-=5;
+				}
+				if(key[83] || key[40]){
+					character.y+=5;
+				}
+				if(key[65] || key[37]){
+					character.x-=5;
+				}
+				if(key[68] || key[39]){
+					character.x+=5;
+				}
+
+			}
+			function draw(){
+				ctx.clearRect(0,0,width,height);
+				// for (var i = 0; i <100; i++) {
+				// 	moveToPoint(myarray[i],mousex,mousey,myarray[i].speed);
+				// 	ctx.fillStyle = 'darkcyan';
+				// 	ctx.fillRect(myarray[i].x,myarray[i].y,10,10);
+				// }
+				ctx.strokeStyle = "#000";
+				ctx.strokeRect(0,0,width,height);
+				drawchar();
+				drawEnemy();
+				//checkHit();
+			}
+			
+			function checkHit(obj1,obj2){
+				for (var i = 0; i <= obj1.w; i++){
+					for (var j = 0; j <= obj1.h; j++) {
+						if (obj1.x+i == obj2.x) {
+							if (obj1.y+j == obj2.y) {
+								enAlive = false;
+								hit=true;
+							}
+						}
+					}				
+				}
+			}
+			$(document).keydown(function(e){
+				key[e.which] = true;
+			});
+			$(document).keyup(function(e){
+				key[e.which] = false;
+			});
+			function moveMouse(e){
+				if(typeof e.offsetX === "undefined" || typeof e.offsetY === "undefined") {
+				   var targetOffset = $(e.target).offset();
+				   e.offsetX = e.pageX - targetOffset.left;
+				   e.offsetY = e.pageY - targetOffset.top;
+				}
+				mousex = e.offsetX * width / $('#gamescreen').width();
+				mousey = e.offsetY * height / $('#gamescreen').height();
+			}
+			$('#gamescreen').mousedown(function(e){
+				pressing = true;
+				moveMouse(e);
+			});
+			$('#gamescreen').mouseup(function(e){
+				pressing = false;
+			});
+			$('#gamescreen').mousemove(function(e){
+				moveMouse(e);
+			});
+			
+			$(document).ready(function(){
+				$(document).bind("contextmenu",function(e){
+					return false;
+				});
+			});
+		</script>
+	</body>
+</html>
